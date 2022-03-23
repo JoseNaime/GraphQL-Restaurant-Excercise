@@ -65,6 +65,7 @@ var schema = buildSchema(`
 type Query{
   restaurant(id: Int): restaurant
   restaurants: [restaurant]
+
 },
 type restaurant {
   id: Int
@@ -83,10 +84,14 @@ input restaurantInput{
 type DeleteResponse{
   ok: Boolean!
 }
+type EditResponse{
+  restaurant: restaurant
+  ok: Boolean!
+  }
 type Mutation{
-  setrestaurant(input: restaurantInput): restaurant
-  deleterestaurant(id: Int!): DeleteResponse
-  editrestaurant(id: Int!, name: String!): restaurant
+  setRestaurant(input: restaurantInput): restaurant
+  deleteRestaurant(id: Int!): DeleteResponse
+  editRestaurant(id: Int!, name: String!): EditResponse
 }
 `);
 // The root provides a resolver function for each API endpoint
@@ -94,18 +99,46 @@ type Mutation{
 var root = {
   restaurant: (arg) => {
     // Your code goes here
+    return restaurants[arg.id]
   },
   restaurants: () => {
     // Your code goes here
+    return restaurants
   },
-  setrestaurant: ({ input }) => {
+  setRestaurant: ({ input }) => {
     // Your code goes here
+    var newRestaurant = {
+      id: restaurants.length + 1,
+      name: input.name,
+      description: input.description,
+      dishes: input.dishes,
+    };
+
+    restaurants.push(newRestaurant);
+    return newRestaurant;
   },
-  deleterestaurant: ({ id }) => {
+  deleteRestaurant: ({ id }) => {
     // Your code goes here
+    const isRestaurantInArray = restaurants[id - 1];
+    if (isRestaurantInArray) {
+      restaurants.splice(id, 1);
+      return { ok: true };
+    } else {
+      return { ok: false };
+    }
   },
-  editrestaurant: ({ id, ...restaurant }) => {
+  editRestaurant: ({ id, ...restaurant }) => {
     // Your code goes here
+    const isRestaurantInArray = restaurants[id - 1];
+    if (isRestaurantInArray) {
+      restaurants[id] = {
+        ...restaurants[id],
+        ...restaurant,
+      };
+      return {restaurant: restaurants[id], ok:true};
+    } else {
+      return {restaurant: null, ok: false };
+    }
   },
 };
 var app = express();
@@ -120,4 +153,4 @@ app.use(
 var port = 5500;
 app.listen(5500, () => console.log("Running Graphql on Port:" + port));
 
-export default root;
+
